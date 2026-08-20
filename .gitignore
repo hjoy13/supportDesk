@@ -1,0 +1,26 @@
+# Virtual environment
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Environment variables / secrets
+.env
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test / coverage files
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Django runtime files
+*.log
+staticfiles/
+media/
