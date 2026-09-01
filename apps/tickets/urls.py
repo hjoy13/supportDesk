@@ -3,7 +3,7 @@ from .views import TicketViewSet
 
 
 router = DefaultRouter()
-router.register("tickets", TicketViewSet)
+router.register("tickets", TicketViewSet, basename="ticket")
 
 #"tickets" → URL prefix
 #TicketViewSet → the ViewSet those URLs should connect to

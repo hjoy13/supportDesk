@@ -23,3 +23,5 @@ class CustomUserAdmin(UserAdmin):
     )
 
     #add_fieldsets -> creating a new user
+
+    list_display = UserAdmin.list_display + ("role",)
