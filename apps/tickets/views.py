@@ -39,5 +39,14 @@ class TicketViewSet(viewsets.ModelViewSet):
                 raise PermissionDenied("Ticket is already assigned.")  
             if new_assignee != user:
                 raise PermissionDenied("Agents may only assign tickets to themselves.")
+
+        if user.role == User.Role.AGENT and "status" in serializer.validated_data:
+            if serializer.instance.assigned_to != user:
+                raise PermissionDenied("Only the assigned agent may change status")
+
+        if user.role == User.Role.AGENT and "priority" in serializer.validated_data:
+            if serializer.instance.assigned_to is not None:
+                raise PermissionDenied("priority can only be set before a ticket is assigned.")  
+            
         serializer.save()
     
