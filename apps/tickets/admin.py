@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Ticket
+from .models import Ticket, TicketMessage
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
@@ -12,4 +12,13 @@ class TicketAdmin(admin.ModelAdmin):
         "assigned_to",
         "created_at",
         
+    )
+
+@admin.register(TicketMessage)
+class TicketMessageAdmin(admin.ModelAdmin):
+    list_display=(
+        "id",
+        "ticket",
+        "author",
+        "created_at",
     )

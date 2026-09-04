@@ -1,10 +1,10 @@
-from rest_framework import viewsets
 from apps.accounts.models import User
-from .models import Ticket
-from .serializers import TicketSerializer
+from .models import Ticket, TicketMessage
+from .serializers import TicketSerializer, TicketMessageSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied
+from rest_framework import mixins, viewsets
 
 class TicketViewSet(viewsets.ModelViewSet):
     #queryset = Ticket.objects.all()
@@ -50,3 +50,48 @@ class TicketViewSet(viewsets.ModelViewSet):
             
         serializer.save()
     
+
+class TicketMessageViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet,
+):
+    serializer_class = TicketMessageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_ticket(self):
+        ticket_id = self.kwargs["ticket_id"]
+        return Ticket.objects.get(id=ticket_id)
+
+    def check_ticket_access(self,ticket):
+        user = self.request.user
+
+        if user.role == User.Role.CUSTOMER:
+            if ticket.created_by != user:
+                raise PermissionDenied(
+                    "You cannot access this ticket conversation"
+                )
+
+        if user.role == User.Role.AGENT:
+            if ticket.assigned_to != user:
+                raise PermissionDenied(
+                    "you can only access assigned ticket conversations."
+                )        
+
+
+    def get_queryset(self):
+        ticket = self.get_ticket()
+
+        self.check_ticket_access(ticket)
+
+        return TicketMessage.objects.filter(ticket=ticket)
+
+    def perform_create(self, serializer):
+        ticket = self.get_ticket()
+
+        self.check_ticket_access(ticket)
+
+        serializer.save(
+            ticket=ticket,
+            author=self.request.user,
+    )

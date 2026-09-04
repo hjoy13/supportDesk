@@ -1,9 +1,10 @@
 from rest_framework import serializers
-from .models import Ticket
+from .models import Ticket, TicketMessage
 
 
 class TicketSerializer(serializers.ModelSerializer):
-    class Meta: #-> this is the configuration of the line below
+    class Meta: #-> this configures the whole serializer class
+        
         model = Ticket
         fields = (
             "id",
@@ -26,3 +27,20 @@ class TicketSerializer(serializers.ModelSerializer):
             "updated_at",
         )
         #a subset of fields with restricted write access
+
+class TicketMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TicketMessage
+        fields = [
+            "id",
+            "ticket",
+            "author",
+            "text",
+            "created_at",
+        ]
+        read_only_fields = [
+            "id",
+            "ticket",
+            "author",
+            "created_at",
+        ]
