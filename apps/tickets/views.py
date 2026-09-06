@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import mixins, viewsets
+from rest_framework.filters import SearchFilter,OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 class TicketViewSet(viewsets.ModelViewSet):
     #queryset = Ticket.objects.all()
@@ -21,6 +23,28 @@ class TicketViewSet(viewsets.ModelViewSet):
     
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
+
+    filterset_fields = [
+        "status",
+        "priority",
+    ]
+
+    search_fields = [
+        "title",
+        "description",
+    ]
+
+    ordering_fields = [
+    "created_at",
+    "updated_at",
+    "priority",
+    ]
+
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+        OrderingFilter,
+    ]
 
     def perform_create(self, serializer):
         serializer.save(created_by = self.request.user)
