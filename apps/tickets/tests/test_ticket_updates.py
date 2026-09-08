@@ -284,3 +284,70 @@ class TicketUpdateTests(APITestCase):
         self.ticket.status,
         Ticket.Status.OPEN,
         )
+
+
+    def test_agent_can_change_priority_while_unassigned(self):
+        self.client.force_authenticate(user=self.agent)
+
+        response = self.client.patch(
+        f"/api/v1/tickets/{self.ticket.id}/",
+        {
+            "priority": Ticket.Priority.HIGH,
+        },
+        format="json",
+        )
+
+        self.assertEqual(
+        response.status_code,
+        status.HTTP_200_OK,
+    )
+
+        self.ticket.refresh_from_db()
+
+        self.assertEqual(
+        self.ticket.priority,
+        Ticket.Priority.HIGH,
+    )
+
+
+    def test_agent_cannot_change_priority_after_assignment(self):
+        self.ticket.assigned_to = self.agent
+        self.ticket.priority = Ticket.Priority.MEDIUM
+        self.ticket.save()
+
+        self.client.force_authenticate(user=self.agent)
+
+        response = self.client.patch(
+        f"/api/v1/tickets/{self.ticket.id}/",
+        {
+            "priority": Ticket.Priority.HIGH,
+        },
+        format="json",
+        )
+
+        self.assertEqual(
+        response.status_code,
+        status.HTTP_403_FORBIDDEN,
+    )
+
+        self.ticket.refresh_from_db()
+
+        self.assertEqual(
+        self.ticket.priority,
+        Ticket.Priority.MEDIUM,
+    )
+
+    def test_customer_does_not_see_priority_in_response(self):
+        self.client.force_authenticate(user=self.customer)
+
+        response = self.client.get(
+        f"/api/v1/tickets/{self.ticket.id}/",
+        )
+
+        self.assertEqual(
+        response.status_code,
+        status.HTTP_200_OK,
+        )
+
+        self.assertNotIn("priority", response.data)    
+    
