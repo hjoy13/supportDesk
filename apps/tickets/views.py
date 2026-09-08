@@ -112,6 +112,8 @@ class TicketViewSet(viewsets.ModelViewSet):
     "priority",
     ]
 
+    ordering = ["-created_at"]
+
     filter_backends = [
         DjangoFilterBackend,
         SearchFilter,
