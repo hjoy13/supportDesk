@@ -224,7 +224,7 @@ class TicketMessageViewSet(
 
         self.check_ticket_access(ticket)
 
-        return TicketMessage.objects.filter(ticket=ticket)
+        return TicketMessage.objects.filter(ticket=ticket).order_by("created_at")
 
     def perform_create(self, serializer):
         ticket = self.get_ticket()
