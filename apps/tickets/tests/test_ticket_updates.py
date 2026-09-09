@@ -349,5 +349,35 @@ class TicketUpdateTests(APITestCase):
         status.HTTP_200_OK,
         )
 
-        self.assertNotIn("priority", response.data)    
+        self.assertNotIn("priority", response.data)  
+
+
+    def test_put_on_ticket_detail_returns_405(self):
+        self.client.force_authenticate(user=self.customer)
+
+        response = self.client.put(
+            f"/api/v1/tickets/{self.ticket.id}/",
+            {
+                "title": "Trying PUT",
+                "description": "Should not be allowed",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_delete_on_ticket_detail_returns_405(self):
+        self.client.force_authenticate(user=self.customer)
+
+        response = self.client.delete(
+            f"/api/v1/tickets/{self.ticket.id}/",
+        )
+
+        self.assertEqual(
+        response.status_code,
+        status.HTTP_405_METHOD_NOT_ALLOWED,
+    )      
     
