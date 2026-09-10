@@ -4,6 +4,17 @@ from apps.accounts.models import User
 
 class TicketSerializer(serializers.ModelSerializer):
 
+    def validate_title(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Title cannot be blank or only whitespace.")
+        return value.strip()
+
+    def validate_description(self, value):
+            if not value.strip():
+                raise serializers.ValidationError("Description cannot be blank or only whitespace.")
+            return value.strip()
+    
+
     def validate(self, attrs):
         request = self.context.get("request")
 
@@ -64,6 +75,11 @@ class TicketSerializer(serializers.ModelSerializer):
         #a subset of fields with restricted write access
 
 class TicketMessageSerializer(serializers.ModelSerializer):
+
+    def validate_text(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Message text cannot be blank or only whitespace.")
+        return value.strip()
     class Meta:
         model = TicketMessage
         fields = [
