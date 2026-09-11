@@ -17,6 +17,9 @@ def is_customer(user):
 def is_agent(user):
     return user.role == User.Role.AGENT
 
+def visible_to_agent(user):
+    return Q(assigned_to__isnull=True) | Q(assigned_to=user)
+
 
 class BusinessOrderingFilter(OrderingFilter):
     def get_ordering(self, request, queryset, view):
@@ -60,7 +63,7 @@ class TicketViewSet(viewsets.ModelViewSet):
             return Ticket.objects.filter(created_by=user)
         else:
             return Ticket.objects.filter(
-                Q(assigned_to__isnull = True) | Q(assigned_to=user)
+                visible_to_agent(user)
             ).annotate(
                 priority_rank=Case(
                     When(priority=Ticket.Priority.LOW, then=Value(1)),
@@ -206,7 +209,7 @@ class TicketMessageViewSet(
 
         else:
             queryset = Ticket.objects.filter(
-                Q(assigned_to__isnull=True) | Q(assigned_to=user)
+                visible_to_agent(user)
             )
 
         return get_object_or_404(queryset, id=ticket_id)
