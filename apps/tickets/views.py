@@ -232,17 +232,10 @@ class TicketMessageViewSet(
     def check_ticket_access(self,ticket):
         user = self.request.user
 
-        if is_customer(user):
-            if ticket.created_by != user:
-                raise PermissionDenied(
-                    "You cannot access this ticket conversation"
-                )
-
-        if is_agent(user):
-            if ticket.assigned_to != user:
-                raise PermissionDenied(
+        if is_agent(user) and ticket.assigned_to !=user :
+            raise PermissionDenied(
                     "you can only access assigned ticket conversations."
-                )        
+            )        
 
 
     def get_queryset(self):
