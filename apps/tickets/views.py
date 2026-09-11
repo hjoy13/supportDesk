@@ -141,53 +141,68 @@ class TicketViewSet(viewsets.ModelViewSet):
 
         serializer.save(created_by=user)
 
-    
-    def perform_update(self, serializer):
-        user = self.request.user
-        agent_locked_fields = {"title", "description"}
 
-        agent_edits = agent_locked_fields & set(
-        serializer.validated_data.keys()
-        )
+    def _block_agent_editing_title_description(self, user, data):
+        agent_locked_fields = {"title", "description"}
+        agent_edits = agent_locked_fields & set(data.keys())
 
         if is_agent(user) and agent_edits:
             raise PermissionDenied(
                 "Agents cannot modify ticket title or description."
             )
+
+    def _block_customer_restricted_fields(self, user, data):
         restricted_fields = {"assigned_to", "status", "priority"}
-        touched = restricted_fields & set(serializer.validated_data.keys())
+        touched = restricted_fields & set(data.keys())
 
         if is_customer(user) and touched:
-            raise PermissionDenied("Customers cannot modify this field.") 
+            raise PermissionDenied("Customers cannot modify this field.")
 
+    def _block_customer_editing_after_assignment(self, user, instance, data):
         customer_editable_fields = {"title", "description"}
-        customer_edits = customer_editable_fields & set(
-        serializer.validated_data.keys()
-        ) 
+        customer_edits = customer_editable_fields & set(data.keys())
 
         if (
             is_customer(user)
-            and serializer.instance.assigned_to is not None
+            and instance.assigned_to is not None
             and customer_edits
         ):
             raise PermissionDenied(
                 "Customers cannot edit a ticket after it has been assigned."
             )
 
-        if is_agent(user) and "assigned_to" in serializer.validated_data:
-            new_assignee = serializer.validated_data["assigned_to"]
-            if serializer.instance.assigned_to is not None:
-                raise PermissionDenied("Ticket is already assigned.")  
+    def _validate_agent_assignment(self, user, instance, data):
+        if is_agent(user) and "assigned_to" in data:
+            new_assignee = data["assigned_to"]
+            if instance.assigned_to is not None:
+                raise PermissionDenied("Ticket is already assigned.")
             if new_assignee != user:
                 raise PermissionDenied("Agents may only assign tickets to themselves.")
 
-        if is_agent(user) and "status" in serializer.validated_data:
-            if serializer.instance.assigned_to != user:
+    def _validate_agent_status_change(self, user, instance, data):
+        if is_agent(user) and "status" in data:
+            if instance.assigned_to != user:
                 raise PermissionDenied("Only the assigned agent may change status")
 
-        if is_agent(user) and "priority" in serializer.validated_data:
-            if serializer.instance.assigned_to is not None:
-                raise PermissionDenied("priority can only be set before a ticket is assigned.")  
+    def _validate_agent_priority_change(self, user, instance, data):
+        if is_agent(user) and "priority" in data:
+            if instance.assigned_to is not None:
+                raise PermissionDenied(
+                    "priority can only be set before a ticket is assigned."
+                )    
+
+    
+    def perform_update(self, serializer):
+        user = self.request.user
+        instance = serializer.instance
+        data = serializer.validated_data
+
+        self._block_agent_editing_title_description(user, data)
+        self._block_customer_restricted_fields(user, data)
+        self._block_customer_editing_after_assignment(user, instance, data)
+        self._validate_agent_assignment(user, instance, data)
+        self._validate_agent_status_change(user, instance, data)
+        self._validate_agent_priority_change(user, instance, data)
             
         serializer.save()
     
