@@ -10,6 +10,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 
 
+
+def is_customer(user):
+    return user.role == User.Role.CUSTOMER
+
+def is_agent(user):
+    return user.role == User.Role.AGENT
+
+
 class BusinessOrderingFilter(OrderingFilter):
     def get_ordering(self, request, queryset, view):
         ordering = super().get_ordering(request, queryset, view)
@@ -48,7 +56,7 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.role == User.Role.CUSTOMER:
+        if is_customer(user):
             return Ticket.objects.filter(created_by=user)
         else:
             return Ticket.objects.filter(
@@ -67,7 +75,7 @@ class TicketViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if (
-            user.role == User.Role.CUSTOMER
+            is_customer(user)
             and "priority" in self.request.query_params
         ):
             raise PermissionDenied(
@@ -83,7 +91,7 @@ class TicketViewSet(viewsets.ModelViewSet):
         }
 
         if (
-            user.role == User.Role.CUSTOMER
+            is_customer(user)
             and "priority" in ordering_fields
         ):
             raise PermissionDenied(
@@ -123,7 +131,7 @@ class TicketViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
 
-        if user.role != User.Role.CUSTOMER:
+        if not is_customer(user):
             raise PermissionDenied(
                 "Only customers can create tickets."
             )
@@ -139,14 +147,14 @@ class TicketViewSet(viewsets.ModelViewSet):
         serializer.validated_data.keys()
         )
 
-        if user.role == User.Role.AGENT and agent_edits:
+        if is_agent(user) and agent_edits:
             raise PermissionDenied(
                 "Agents cannot modify ticket title or description."
             )
         restricted_fields = {"assigned_to", "status", "priority"}
         touched = restricted_fields & set(serializer.validated_data.keys())
 
-        if user.role == User.Role.CUSTOMER and touched:
+        if is_customer(user) and touched:
             raise PermissionDenied("Customers cannot modify this field.") 
 
         customer_editable_fields = {"title", "description"}
@@ -155,7 +163,7 @@ class TicketViewSet(viewsets.ModelViewSet):
         ) 
 
         if (
-            user.role == User.Role.CUSTOMER
+            is_customer(user)
             and serializer.instance.assigned_to is not None
             and customer_edits
         ):
@@ -163,18 +171,18 @@ class TicketViewSet(viewsets.ModelViewSet):
                 "Customers cannot edit a ticket after it has been assigned."
             )
 
-        if user.role == User.Role.AGENT and "assigned_to" in serializer.validated_data:
+        if is_agent(user) and "assigned_to" in serializer.validated_data:
             new_assignee = serializer.validated_data["assigned_to"]
             if serializer.instance.assigned_to is not None:
                 raise PermissionDenied("Ticket is already assigned.")  
             if new_assignee != user:
                 raise PermissionDenied("Agents may only assign tickets to themselves.")
 
-        if user.role == User.Role.AGENT and "status" in serializer.validated_data:
+        if is_agent(user) and "status" in serializer.validated_data:
             if serializer.instance.assigned_to != user:
                 raise PermissionDenied("Only the assigned agent may change status")
 
-        if user.role == User.Role.AGENT and "priority" in serializer.validated_data:
+        if is_agent(user) and "priority" in serializer.validated_data:
             if serializer.instance.assigned_to is not None:
                 raise PermissionDenied("priority can only be set before a ticket is assigned.")  
             
@@ -193,7 +201,7 @@ class TicketMessageViewSet(
         user = self.request.user
         ticket_id = self.kwargs["ticket_id"]
 
-        if user.role == User.Role.CUSTOMER:
+        if is_customer(user):
             queryset = Ticket.objects.filter(created_by=user)
 
         else:
@@ -206,13 +214,13 @@ class TicketMessageViewSet(
     def check_ticket_access(self,ticket):
         user = self.request.user
 
-        if user.role == User.Role.CUSTOMER:
+        if is_customer(user):
             if ticket.created_by != user:
                 raise PermissionDenied(
                     "You cannot access this ticket conversation"
                 )
 
-        if user.role == User.Role.AGENT:
+        if is_agent(user):
             if ticket.assigned_to != user:
                 raise PermissionDenied(
                     "you can only access assigned ticket conversations."
