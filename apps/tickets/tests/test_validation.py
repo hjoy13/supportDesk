@@ -44,7 +44,7 @@ class BlankFieldValidationTests(APITestCase):
 
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("title", response.data)
+        self.assertIn("title", response.data["errors"])
 
 
     def test_customer_cannot_create_ticket_with_blank_description(self):
@@ -62,7 +62,7 @@ class BlankFieldValidationTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("description", response.data)
+        self.assertIn("description", response.data["errors"])
 
 
 
@@ -78,7 +78,7 @@ class BlankFieldValidationTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("text", response.data)
+        self.assertIn("text", response.data["errors"])
         self.assertEqual(
             TicketMessage.objects.filter(ticket=self.ticket).count(), 0
         )    
