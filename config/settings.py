@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'apps.accounts',
     'apps.tickets',
     'django_filters',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -152,4 +153,12 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
 
     "EXCEPTION_HANDLER": "apps.tickets.exceptions.custom_exception_handler",
+
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "SupportDesk API",
+    "DESCRIPTION": "Role-based ticket management API with CUSTOMER and AGENT roles.",
+    "VERSION": "1.0.0",
 }
