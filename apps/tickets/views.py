@@ -8,7 +8,9 @@ from rest_framework import mixins, viewsets
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
-
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from .ai import get_suggested_reply
 
 
 def is_customer(user):
@@ -205,6 +207,27 @@ class TicketViewSet(viewsets.ModelViewSet):
         self._validate_agent_priority_change(user, instance, data)
             
         serializer.save()
+
+    @action(detail=True, methods=["post"], url_path="suggest-reply")
+    def suggest_reply(self, request, pk=None):
+        user = request.user
+        ticket = self.get_object()
+
+        if not is_agent(user):
+            raise PermissionDenied(
+                "Only agents can request suggested replies."
+            )
+
+        if ticket.assigned_to != user:
+            raise PermissionDenied(
+                "You can only request suggestions for tickets assigned to you."
+            )
+
+        messages = TicketMessage.objects.filter(ticket=ticket).order_by("created_at")
+
+        suggested_text = get_suggested_reply(ticket, messages)
+
+        return Response({"suggested_reply": suggested_text})    
     
 
 class TicketMessageViewSet(
