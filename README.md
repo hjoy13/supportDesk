@@ -75,6 +75,26 @@ curl http://localhost:8000/api/v1/tickets/ \
   -H "Authorization: Bearer <access_token>"
 ```
 
+## API in action
+
+**Full endpoint list (Swagger UI):**
+
+![Endpoint list](./docs/screenshots/endpoint-list.png)
+
+**JWT authorization:**
+
+![Authorized via JWT](./docs/screenshots/jwt-authorized.png)
+
+**Role-based field visibility — the core business rule of this project.** The same `GET /api/v1/tickets/` request returns different results depending on who's asking:
+
+*Customer response — `priority` is completely absent:*
+
+![Customer ticket list response](./docs/screenshots/customer-response.png)
+
+*Agent response — `priority` is visible, and only unassigned/self-assigned tickets are returned:*
+
+![Agent ticket list response](./docs/screenshots/agent-response.png)
+
 ## Demo credentials
 
 > ⚠️ These are seeded demo accounts for local evaluation only — not real users, not real data.
